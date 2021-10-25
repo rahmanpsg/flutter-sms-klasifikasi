@@ -4,6 +4,7 @@ import 'package:contacts_service/contacts_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:sms_classification/classifier.dart';
 import 'package:sms_classification/models/list_sms_model.dart';
 import 'package:sms_classification/models/predict_model.dart';
@@ -27,33 +28,38 @@ class SmsController extends GetxController with Classifier {
 
   late TextEditingController tfController;
 
-  final Map<String, String> kontak = {};
+  late List<Contact> contacts;
+  final Map<String, String> contact = {};
 
   @override
   void onInit() async {
     super.onInit();
 
-    await getAllContacts();
-
     await loadModel();
     await loadTokenizer();
 
-    await getAllSms();
-    await groupSms();
+    if (await Permission.contacts.request().isGranted) {
+      await getAllContacts();
+    }
+
+    if (await Permission.sms.request().isGranted) {
+      await getAllSms();
+    }
+
+    await groupAndPredictSms();
 
     tfController = TextEditingController();
   }
 
   Future getAllContacts() async {
     try {
-      List<Contact> contacts =
-          await ContactsService.getContacts(withThumbnails: false);
-      contacts.forEach((contact) {
-        String nama = contact.displayName ?? '';
+      contacts = await ContactsService.getContacts(withThumbnails: false);
+      contacts.forEach((cont) {
+        String nama = cont.displayName ?? '';
         String nomor =
-            contact.phones!.length > 0 ? contact.phones![0].value ?? '' : '';
+            cont.phones!.length > 0 ? cont.phones![0].value ?? '' : '';
 
-        kontak.addIf(contact.phones!.length > 0, nomor, nama);
+        contact.addIf(cont.phones!.length > 0, nomor, nama);
       });
     } catch (e) {
       log(e.toString());
@@ -61,7 +67,7 @@ class SmsController extends GetxController with Classifier {
   }
 
   String encodeContact(String number) {
-    return kontak.containsKey(number) ? kontak[number] ?? number : number;
+    return contact.containsKey(number) ? contact[number] ?? number : number;
   }
 
   void listener(SendStatus status) {
@@ -124,7 +130,7 @@ class SmsController extends GetxController with Classifier {
     update();
   }
 
-  Future groupSms() async {
+  Future groupAndPredictSms() async {
     try {
       // Membuat list berdasarkan key dari semua threadID Sms
       List<int> keys = [];
@@ -141,12 +147,14 @@ class SmsController extends GetxController with Classifier {
 
         List<SmsModel> list = [
           ...sms.map((s) {
-            // Periksa jika dari nomor baru maka akan diprediksi
+            // Periksa SMS jika dari nomor baru maka akan diprediksi
             PredictModel _predict =
                 PredictModel(tipe: 3, tipeDecode: '', confidence: '100');
 
-            if (s.address!.contains(new RegExp(r'[0-9]')) &&
-                s.address!.length > 6) {
+            if (checkIsNumber(
+              sender: s.address ?? '',
+              withLength: true,
+            )) {
               _predict = predict(s.body ?? '');
             }
 
@@ -193,5 +201,16 @@ class SmsController extends GetxController with Classifier {
     }
 
     return Waktu(date).format('d MMM');
+  }
+
+  bool checkIsNumber({required String sender, bool withLength = false}) {
+    bool cek = sender.contains(new RegExp(r'[0-9]'));
+    bool cekLength = true;
+
+    if (withLength) {
+      cekLength = sender.length > 6;
+    }
+
+    return cek && cekLength;
   }
 }

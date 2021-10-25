@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sms_classification/controllers/sms_controller.dart';
+import 'package:sms_classification/models/list_sms_model.dart';
 import 'package:sms_classification/models/sms_model.dart';
 import 'package:sms_classification/styles/constant.dart';
 import 'package:telephony/telephony.dart';
@@ -15,15 +16,13 @@ class PesanScreen extends StatelessWidget {
     SmsController smsController = Get.find<SmsController>();
     int listMessageActive = Get.arguments;
     smsController.listMessageActive = listMessageActive;
-    List<SmsModel> listSms =
-        smsController.listMessage[listMessageActive].messages;
+    ListSmsModel listSms = smsController.listMessage[listMessageActive];
 
     return Scaffold(
       appBar: AppBar(
         iconTheme: IconThemeData(color: dangerColor),
         title: Text(
-          smsController.encodeContact(
-              smsController.listMessage[listMessageActive].sender),
+          smsController.encodeContact(listSms.sender),
           style: kHeaderStyle,
         ),
       ),
@@ -35,12 +34,12 @@ class PesanScreen extends StatelessWidget {
               child: GetBuilder<SmsController>(
                 builder: (smsController) {
                   return ListView.builder(
-                    itemCount: listSms.length,
+                    itemCount: listSms.messages.length,
                     shrinkWrap: true,
                     reverse: true,
                     padding: EdgeInsets.only(top: 10, bottom: 10),
                     itemBuilder: (context, index) {
-                      final SmsModel sms = listSms[index];
+                      final SmsModel sms = listSms.messages[index];
 
                       return Container(
                         padding: EdgeInsets.only(
@@ -109,35 +108,40 @@ class PesanScreen extends StatelessWidget {
                 },
               ),
             ),
-            Container(
-              padding: const EdgeInsets.all(16),
-              color: Colors.white,
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: smsController.tfController,
-                      maxLines: null,
-                      keyboardType: TextInputType.multiline,
-                      decoration: const InputDecoration(
-                        hintText: 'Pesan teks',
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () {
-                      smsController.sendSms(
-                        smsController.listMessage[listMessageActive].sender,
-                      );
-                    },
-                    icon: Icon(
-                      Icons.send,
-                      color: dangerColor,
+            smsController.checkIsNumber(sender: listSms.sender)
+                ? Container(
+                    padding: const EdgeInsets.all(16),
+                    color: Colors.white,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: smsController.tfController,
+                            maxLines: null,
+                            keyboardType: TextInputType.multiline,
+                            decoration: const InputDecoration(
+                              hintText: 'Pesan teks',
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () {
+                            smsController.sendSms(
+                              listSms.sender,
+                            );
+                          },
+                          icon: Icon(
+                            Icons.send,
+                            color: dangerColor,
+                          ),
+                        )
+                      ],
                     ),
                   )
-                ],
-              ),
-            ),
+                : Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text('Pengirim tidak mendukung balasan'),
+                  ),
           ],
         ),
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'screens/home.dart';
+import 'screens/pesan_baru.dart';
 import 'screens/pesan.dart';
 import 'styles/constant.dart';
 
@@ -16,7 +17,10 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       theme: ThemeData(
-        primaryColor: primaryColor,
+        // primaryColor: primaryColor,
+        colorScheme: ColorScheme.light().copyWith(
+          primary: primaryColor,
+        ),
         splashColor: secondaryColor,
         primarySwatch: Colors.teal,
         fontFamily: 'Poppins',
@@ -35,6 +39,7 @@ class MyApp extends StatelessWidget {
           page: () => PesanScreen(),
           transition: Transition.cupertino,
         ),
+        GetPage(name: '/pesanbaru', page: () => PesanBaruScreen()),
       ],
     );
   }

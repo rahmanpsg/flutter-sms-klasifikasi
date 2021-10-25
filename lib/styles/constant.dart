@@ -31,7 +31,6 @@ const secondaryStyle = TextStyle(
 
 final kBoxDecorationStyle = BoxDecoration(
   color: primaryColor,
-  borderRadius: BorderRadius.circular(25.0),
   boxShadow: [
     BoxShadow(
       color: Colors.black12,
