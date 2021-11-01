@@ -1,29 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sms_classification/controllers/sms_controller.dart';
+import 'package:sms_classification/models/kontak_moder.dart';
 import 'package:sms_classification/models/list_sms_model.dart';
 import 'package:sms_classification/models/sms_model.dart';
 import 'package:sms_classification/styles/constant.dart';
 import 'package:telephony/telephony.dart';
 
-import '../format_indonesia.dart';
+import '../utils/format_indonesia.dart';
 
 class PesanScreen extends StatelessWidget {
   const PesanScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    SmsController smsController = Get.find<SmsController>();
-    int listMessageActive = Get.arguments;
-    smsController.listMessageActive = listMessageActive;
-    ListSmsModel listSms = smsController.listMessage[listMessageActive];
+    SmsController _smsController = Get.find<SmsController>();
+    int _listMessageActive = Get.arguments['index'];
+    _smsController.listMessageActive = _listMessageActive;
+
+    _smsController.smsTfController.clear();
+
+    // jika index -1 maka membuat pesan baru
+    if (_listMessageActive == -1) {
+      KontakModel contact = Get.arguments['contact'];
+      _smsController.createNewSms(contact);
+    }
+
+    ListSmsModel _listSms =
+        _smsController.listMessage[_smsController.listMessageActive];
 
     return Scaffold(
       appBar: AppBar(
-        iconTheme: IconThemeData(color: dangerColor),
         title: Text(
-          smsController.encodeContact(listSms.sender),
-          style: kHeaderStyle,
+          _smsController.encodeContact(_listSms.sender),
         ),
       ),
       body: Container(
@@ -34,12 +43,12 @@ class PesanScreen extends StatelessWidget {
               child: GetBuilder<SmsController>(
                 builder: (smsController) {
                   return ListView.builder(
-                    itemCount: listSms.messages.length,
+                    itemCount: _listSms.messages.length,
                     shrinkWrap: true,
                     reverse: true,
                     padding: EdgeInsets.only(top: 10, bottom: 10),
                     itemBuilder: (context, index) {
-                      final SmsModel sms = listSms.messages[index];
+                      final SmsModel sms = _listSms.messages[index];
 
                       return Container(
                         padding: EdgeInsets.only(
@@ -108,7 +117,7 @@ class PesanScreen extends StatelessWidget {
                 },
               ),
             ),
-            smsController.checkIsNumber(sender: listSms.sender)
+            _smsController.checkIsNumber(sender: _listSms.sender)
                 ? Container(
                     padding: const EdgeInsets.all(16),
                     color: Colors.white,
@@ -116,7 +125,7 @@ class PesanScreen extends StatelessWidget {
                       children: [
                         Expanded(
                           child: TextField(
-                            controller: smsController.tfController,
+                            controller: _smsController.smsTfController,
                             maxLines: null,
                             keyboardType: TextInputType.multiline,
                             decoration: const InputDecoration(
@@ -126,8 +135,8 @@ class PesanScreen extends StatelessWidget {
                         ),
                         IconButton(
                           onPressed: () {
-                            smsController.sendSms(
-                              listSms.sender,
+                            _smsController.sendSms(
+                              _listSms.sender,
                             );
                           },
                           icon: Icon(

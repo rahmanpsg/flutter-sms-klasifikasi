@@ -5,13 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:sms_classification/classifier.dart';
+import 'package:sms_classification/utils/classifier.dart';
+import 'package:sms_classification/models/kontak_moder.dart';
 import 'package:sms_classification/models/list_sms_model.dart';
 import 'package:sms_classification/models/predict_model.dart';
 import 'package:sms_classification/models/sms_model.dart';
 import 'package:telephony/telephony.dart';
 
-import '../format_indonesia.dart';
+import '../utils/format_indonesia.dart';
 
 class SmsController extends GetxController with Classifier {
   final Telephony _telephony = Telephony.instance;
@@ -26,10 +27,12 @@ class SmsController extends GetxController with Classifier {
 
   final isLoading = true.obs;
 
-  late TextEditingController tfController;
+  late TextEditingController smsTfController;
+  late TextEditingController searchTfController;
 
-  late List<Contact> contacts;
+  List<KontakModel> contacts = [];
   final Map<String, String> contact = {};
+  final List<KontakModel> searchContacts = <KontakModel>[].obs;
 
   @override
   void onInit() async {
@@ -48,22 +51,74 @@ class SmsController extends GetxController with Classifier {
 
     await groupAndPredictSms();
 
-    tfController = TextEditingController();
+    _telephony.listenIncomingSms(
+      onNewMessage: newMessageHandler,
+      listenInBackground: false,
+    );
+
+    smsTfController = TextEditingController();
+    searchTfController = TextEditingController();
+  }
+
+  void newMessageHandler(SmsMessage message) {
+    int indexList = getIndexListMessage(message.address.toString());
+    if (indexList == -1) {
+    } else {
+      addNewMessage(
+        date: DateTime.fromMillisecondsSinceEpoch(message.date ?? 0),
+        body: message.body,
+        type: message.type,
+      );
+
+      listMessageActive = 0;
+
+      update();
+    }
   }
 
   Future getAllContacts() async {
     try {
-      contacts = await ContactsService.getContacts(withThumbnails: false);
-      contacts.forEach((cont) {
-        String nama = cont.displayName ?? '';
-        String nomor =
-            cont.phones!.length > 0 ? cont.phones![0].value ?? '' : '';
+      List<Contact> _contacts =
+          await ContactsService.getContacts(withThumbnails: false);
+      _contacts.forEach((cont) {
+        if (cont.phones!.length < 1) return;
+        String nama = cont.displayName.toString();
+        List<String> telp = [];
+        String label = cont.phones!.first.label.toString();
 
-        contact.addIf(cont.phones!.length > 0, nomor, nama);
+        cont.phones!.forEach((phone) {
+          String nomor = phone.value
+              .toString()
+              .replaceAll(new RegExp('[^+\\d]|(?<=.)\\+'), '');
+
+          telp.add(nomor);
+
+          contact.addIf(phone.value.toString() != '', nomor, nama);
+        });
+
+        KontakModel kontak =
+            KontakModel(nama: nama, telp: telp.toSet().toList(), label: label);
+        contacts.add(kontak);
       });
     } catch (e) {
       log(e.toString());
     }
+  }
+
+  void searchContact(String text) {
+    searchContacts.clear();
+    if (RegExp(r'^-?[0-9]+$').hasMatch(text)) {
+      searchContacts.add(
+        KontakModel(nama: 'Kirim ke $text', telp: [text], label: 'Khusus'),
+      );
+    }
+
+    contacts.forEach((cont) {
+      if (cont.nama.toLowerCase().contains(text.toLowerCase()) ||
+          cont.telp.where((t) => t.contains(text)).isNotEmpty) {
+        searchContacts.add(cont);
+      }
+    });
   }
 
   String encodeContact(String number) {
@@ -72,24 +127,17 @@ class SmsController extends GetxController with Classifier {
 
   void listener(SendStatus status) {
     try {
-      String body = tfController.text;
+      String body = smsTfController.text;
       DateTime date = DateTime.now();
 
       // if (status == SendStatus.SENT) {}
       if (status == SendStatus.DELIVERED) {
-        tfController.clear();
-        listMessage[listMessageActive].date = date;
-        listMessage[listMessageActive].messages.insert(
-              0,
-              SmsModel(
-                body: body,
-                date: date,
-                type: SmsType.MESSAGE_TYPE_SENT,
-                predict: PredictModel(tipe: 3, tipeDecode: '', confidence: ''),
-              ),
-            );
-
-        listMessage.sort((a, b) => b.date.compareTo(a.date));
+        smsTfController.clear();
+        addNewMessage(
+          date: date,
+          body: body,
+          type: SmsType.MESSAGE_TYPE_SENT,
+        );
 
         listMessageActive = 0;
 
@@ -104,7 +152,7 @@ class SmsController extends GetxController with Classifier {
     try {
       _telephony.sendSms(
         to: to,
-        message: tfController.text,
+        message: smsTfController.text,
         statusListener: listener,
       );
     } catch (e) {
@@ -137,6 +185,9 @@ class SmsController extends GetxController with Classifier {
       _messagesInbox.forEach((msg) {
         keys.add(msg.threadId ?? 0);
       });
+      _messagesSent.forEach((msg) {
+        keys.add(msg.threadId ?? 0);
+      });
 
       // Mengelompokkan list berdasarkan threadID yang sama
       [...keys.toSet()].forEach((k) {
@@ -151,11 +202,12 @@ class SmsController extends GetxController with Classifier {
             PredictModel _predict =
                 PredictModel(tipe: 3, tipeDecode: '', confidence: '100');
 
-            if (checkIsNumber(
-              sender: s.address ?? '',
-              withLength: true,
-            )) {
-              _predict = predict(s.body ?? '');
+            if (s.type == SmsType.MESSAGE_TYPE_INBOX &&
+                checkIsNumber(
+                  sender: s.address.toString(),
+                  withLength: true,
+                )) {
+              _predict = predict(s.body.toString());
             }
 
             return SmsModel(
@@ -174,7 +226,7 @@ class SmsController extends GetxController with Classifier {
         //
         listMessage.add(ListSmsModel(
           threadID: sms.first.threadId ?? 0,
-          sender: sms.first.address ?? '',
+          sender: sms.first.address.toString(),
           date: list.first.date,
           messages: list,
         ));
@@ -186,6 +238,58 @@ class SmsController extends GetxController with Classifier {
     } catch (e) {
       log(e.toString());
     }
+  }
+
+  void createNewSms(KontakModel kontak) {
+    listMessage.add(ListSmsModel(
+      threadID: -1,
+      sender: kontak.telp.first,
+      date: DateTime.now(),
+      messages: [],
+    ));
+
+    listMessageActive = listMessage.length - 1;
+  }
+
+  void addNewMessage({DateTime? date, String? body, SmsType? type}) {
+    DateTime _date = date ?? DateTime.now();
+    PredictModel _predict = PredictModel(
+      tipe: 3,
+      tipeDecode: '',
+      confidence: '',
+    );
+
+    if (type == SmsType.MESSAGE_TYPE_INBOX &&
+        checkIsNumber(
+          sender: listMessage[listMessageActive].sender,
+          withLength: true,
+        )) {
+      _predict = predict(body.toString());
+    }
+
+    listMessage[listMessageActive].date = _date;
+    listMessage[listMessageActive].messages.insert(
+          0,
+          SmsModel(
+            body: body.toString(),
+            date: _date,
+            type: type,
+            predict: _predict,
+          ),
+        );
+
+    listMessage.sort((a, b) => b.date.compareTo(a.date));
+  }
+
+  int getIndexListMessage(String sender) {
+    try {
+      return listMessage
+          .indexOf((listMessage.singleWhere((msg) => msg.sender == sender)));
+    } catch (e) {
+      log(e.toString());
+    }
+
+    return -1;
   }
 
   String timeAgo(DateTime date) {

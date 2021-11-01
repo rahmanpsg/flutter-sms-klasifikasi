@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sms_classification/controllers/sms_controller.dart';
 import 'package:sms_classification/models/sms_model.dart';
+import 'package:sms_classification/routes/app_pages.dart';
 import 'package:sms_classification/styles/constant.dart';
+import 'package:telephony/telephony.dart';
 
 class ListSms extends StatelessWidget {
   const ListSms({Key? key, required this.sms, required this.index})
@@ -16,7 +18,7 @@ class ListSms extends StatelessWidget {
     SmsController smsController = Get.find<SmsController>();
     return InkWell(
       onTap: () {
-        Get.toNamed("/pesan", arguments: index);
+        Get.toNamed(Routes.pesan, arguments: {'index': index});
       },
       highlightColor: Colors.transparent,
       child: ListTile(
@@ -51,7 +53,7 @@ class ListSms extends StatelessWidget {
           smsController.encodeContact(smsController.listMessage[index].sender),
         ),
         subtitle: Text(
-          sms.body,
+          (sms.type == SmsType.MESSAGE_TYPE_SENT ? 'Anda: ' : '') + sms.body,
           maxLines: 3,
           overflow: TextOverflow.ellipsis,
         ),

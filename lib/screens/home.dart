@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:sms_classification/Widgets/listSms.dart';
 import 'package:sms_classification/controllers/sms_controller.dart';
 import 'package:sms_classification/models/sms_model.dart';
+import 'package:sms_classification/routes/app_pages.dart';
 import 'package:sms_classification/styles/constant.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -14,14 +15,25 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text(
           'SMS Klasifikasi',
-          style: kHeaderStyle,
         ),
+        actions: [
+          GestureDetector(
+            onTap: () {
+              Get.toNamed(Routes.about);
+            },
+            child: Icon(
+              Icons.info,
+            ),
+          ),
+          SizedBox(width: 12),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Get.toNamed('/pesanbaru');
+          Get.toNamed(Routes.pesanBaru);
         },
-        child: const Icon(Icons.add),
+        backgroundColor: primaryColor,
+        child: const Icon(Icons.add, color: dangerColor),
       ),
       body: Column(
         children: <Widget>[
@@ -36,6 +48,7 @@ class HomeScreen extends StatelessWidget {
                           ),
                         )
                       : ListView.builder(
+                          padding: EdgeInsets.only(top: 8),
                           itemCount: smsController.listMessage.length,
                           itemBuilder: (_, index) {
                             SmsModel message =

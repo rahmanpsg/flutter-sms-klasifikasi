@@ -1,10 +1,10 @@
 import 'dart:developer';
 
-import 'package:contacts_service/contacts_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sms_classification/Widgets/listKontak.dart';
 import 'package:sms_classification/controllers/sms_controller.dart';
+import 'package:sms_classification/models/kontak_moder.dart';
 import 'package:sms_classification/styles/constant.dart';
 
 class PesanBaruScreen extends StatelessWidget {
@@ -12,15 +12,16 @@ class PesanBaruScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    SmsController smsController = Get.find<SmsController>();
-    List<Contact> contacts = smsController.contacts;
+    SmsController _smsController = Get.find<SmsController>();
+    List<KontakModel> _contacts = _smsController.contacts;
+    List<KontakModel> _searchContacts = _smsController.searchContacts;
+    _smsController.searchTfController.clear();
+    _searchContacts.clear();
 
     return Scaffold(
       appBar: AppBar(
-        iconTheme: IconThemeData(color: dangerColor),
         title: const Text(
           "Pesan baru",
-          style: kHeaderStyle,
         ),
       ),
       body: Column(
@@ -34,23 +35,33 @@ class PesanBaruScreen extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: TextField(
-                    // controller: smsController.tfController,
+                    controller: _smsController.searchTfController,
+                    onChanged: ((text) => _smsController.searchContact(text)),
                     decoration: const InputDecoration(
-                        hintText: 'Ketik nama atau nomor telepon',
-                        border: InputBorder.none),
+                      hintText: 'Ketik nama atau nomor telepon',
+                      border: InputBorder.none,
+                    ),
                   ),
                 )
               ],
             ),
           ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: contacts.length,
-              itemBuilder: (_, index) {
-                return ListKontak(contact: contacts[index]);
-              },
-            ),
-          )
+          Obx(() => Expanded(
+                child: _searchContacts.isNotEmpty ||
+                        _smsController.searchTfController.text.isNotEmpty
+                    ? ListView.builder(
+                        itemCount: _searchContacts.length,
+                        itemBuilder: (_, index) {
+                          return ListKontak(contact: _searchContacts[index]);
+                        },
+                      )
+                    : ListView.builder(
+                        itemCount: _contacts.length,
+                        itemBuilder: (_, index) {
+                          return ListKontak(contact: _contacts[index]);
+                        },
+                      ),
+              ))
         ],
       ),
     );
