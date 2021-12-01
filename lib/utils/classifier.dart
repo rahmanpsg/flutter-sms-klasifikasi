@@ -9,12 +9,12 @@ import 'package:tflite_flutter/tflite_flutter.dart';
 
 import 'preprocessing.dart';
 
-mixin Classifier {
+class Classifier {
   // nama file model & tokenizer
   final _modelFile = 'model.tflite';
   final _tokenFile = 'tokenizer.json';
 
-  // Panjang maksimal kata
+  // Jumlah maksimal kata
   final int _sentenceLen = 50;
 
   final Preprocessing _preprocessing = Preprocessing();
@@ -30,12 +30,6 @@ mixin Classifier {
     2: 'Pinjaman Online',
     3: 'Lain-lain',
   };
-
-  // Classifier() {
-  //   // Load model when the classifier is initialized.
-  //   _loadModel();
-  //   _loadTokenizer();
-  // }
 
   Future loadModel() async {
     // Creating the interpreter using Interpreter.fromAsset

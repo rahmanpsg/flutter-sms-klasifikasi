@@ -8,7 +8,7 @@ const bgColor = Color(0xFFF6F6F6);
 const yellowColor = Color(0xFFf5f522);
 const orangeColor = Color(0xFFffbd2e);
 const greenColor = Color(0xFF4bd662);
-const blueColor = Color(0xFF22e3f5);
+const blueColor = Color(0xFF0046bf);
 const redColor = Color(0xFFf7052e);
 
 // Text Style
@@ -29,7 +29,7 @@ const secondaryStyle = TextStyle(
     fontWeight: FontWeight.bold,
     color: primaryColor);
 
-final kBoxDecorationStyle = BoxDecoration(
+const kBoxDecorationStyle = BoxDecoration(
   color: primaryColor,
   boxShadow: [
     BoxShadow(
@@ -39,3 +39,5 @@ final kBoxDecorationStyle = BoxDecoration(
     ),
   ],
 );
+
+const List<Color> iconColor = [redColor, orangeColor, blueColor];

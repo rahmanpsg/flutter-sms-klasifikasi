@@ -93,7 +93,7 @@ class PesanScreen extends StatelessWidget {
                                       Icon(
                                         Icons.warning,
                                         size: 16,
-                                        color: redColor,
+                                        color: iconColor[sms.predict.tipe],
                                       ),
                                       SizedBox(
                                         width: 6,

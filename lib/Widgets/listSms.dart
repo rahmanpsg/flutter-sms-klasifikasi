@@ -16,6 +16,7 @@ class ListSms extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     SmsController smsController = Get.find<SmsController>();
+
     return InkWell(
       onTap: () {
         Get.toNamed(Routes.pesan, arguments: {'index': index});
@@ -30,9 +31,9 @@ class ListSms extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.start,
             children: <Widget>[
               sms.predict.tipe != 3
-                  ? const Icon(
+                  ? Icon(
                       Icons.warning,
-                      color: redColor,
+                      color: iconColor[sms.predict.tipe],
                       size: 28,
                     )
                   : const Icon(
