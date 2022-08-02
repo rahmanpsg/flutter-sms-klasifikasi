@@ -30,7 +30,7 @@ class ListSms extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.start,
             children: <Widget>[
-              sms.predict.tipe != 3
+              sms.predict.isSpam
                   ? Icon(
                       Icons.warning,
                       color: iconColor[sms.predict.tipe],
@@ -41,7 +41,7 @@ class ListSms extends StatelessWidget {
                       color: dangerColor,
                       size: 28,
                     ),
-              if (sms.predict.tipe != 3)
+              if (sms.predict.isSpam)
                 Text(
                   sms.predict.tipeDecode,
                   style: kHintStyle,

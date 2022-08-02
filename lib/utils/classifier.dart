@@ -26,14 +26,12 @@ class Classifier {
 
   final Map<int, String> tipeDecode = {
     0: 'Penipuan',
-    1: 'Judi Online',
-    2: 'Pinjaman Online',
-    3: 'Lain-lain',
+    1: 'Lain-lain',
   };
 
   Future loadModel() async {
     // Creating the interpreter using Interpreter.fromAsset
-    _interpreter = await Interpreter.fromAsset('$_modelFile');
+    _interpreter = await Interpreter.fromAsset('model/$_modelFile');
     print('Interpreter loaded successfully');
   }
 
@@ -57,7 +55,7 @@ class Classifier {
     List<List<double>> input = tokenizeInputText(preText);
 
     // output of shape
-    var output = List<double>.filled(4, 0).reshape([1, 4]);
+    var output = List<double>.filled(2, 0).reshape([1, 2]);
 
     // The run method will run inference and
     // store the resulting values in output.

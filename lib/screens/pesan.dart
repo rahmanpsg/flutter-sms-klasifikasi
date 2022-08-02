@@ -81,7 +81,7 @@ class PesanScreen extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            if (sms.predict.tipe != 3)
+                            if (sms.predict.isSpam)
                               Align(
                                 alignment: Alignment.topLeft,
                                 child: Container(

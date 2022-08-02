@@ -22,4 +22,7 @@ class PredictModel {
     _data['confidence'] = confidence;
     return _data;
   }
+
+  bool get isSpam => tipe == 0;
+  bool get isHam => tipe == 1;
 }
